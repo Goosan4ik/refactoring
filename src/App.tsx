@@ -11,6 +11,59 @@ import { getCurrentUser, logout } from "./api/auth";
 import * as movie from "./api/movie";
 import { jwtDecode } from "jwt-decode";
 
+// ==================== КОНСТАНТЫ ====================
+export const API_BASE_URL = "http://91.142.94.183:8080";
+
+export const API_ENDPOINTS = {
+  AUTH_LOGIN: "/auth/login",
+  AUTH_REGISTER: "/auth/register",
+  SESSIONS: "/sessions",
+  HALLS: "/halls",
+  TICKETS: "/tickets",
+  PURCHASES: "/purchases",
+  PAYMENTS: "/payments/process",
+  FILMS: "/films",
+  REVIEWS: "/reviews",
+};
+
+export const PAGINATION = {
+  DEFAULT_PAGE: 0,
+  SESSIONS_PAGE_SIZE: 100,
+  PURCHASES_PAGE_SIZE: 20,
+  FILMS_PAGE_SIZE: 20,
+};
+
+export const UI_SIZES = {
+  SEAT_WIDTH: "50px",
+  SEAT_HEIGHT: "50px",
+  LEGEND_ITEM_WIDTH: "20px",
+  LEGEND_ITEM_HEIGHT: "20px",
+  SIDEBAR_WIDTH: "250px",
+  POSTER_WIDTH: "200px",
+};
+
+export const UI_COLORS = {
+  VIP_COLOR: "#0d6efd",
+  VIP_BORDER: "1px solid #0d6efd",
+  DEFAULT_COLOR: "#fff",
+  DEFAULT_BORDER: "1px solid #fff",
+  DARK_BG: "#1f1f1f",
+};
+
+export const UI_GRID = {
+  GAP_BETWEEN_SEATS: "5px",
+  GAP_BETWEEN_CATEGORIES: "10px",
+  GAP_BETWEEN_ROWS: "10px",
+};
+
+export const DEFAULT_VALUES = {
+  EMPTY_STRING: "",
+  ZERO: 0,
+  DEFAULT_AGE: 21,
+};
+
+// =====================================================
+
 // Payload JWT токена с основной информацией о пользователе
 interface TokenPayload {
   sub: string; // Уникальный идентификатор пользователя

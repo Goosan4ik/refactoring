@@ -1,71 +1,94 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import * as userApi from "./api/user";
+import {
+  API_BASE_URL,
+  API_ENDPOINTS,
+  PAGINATION,
+  DEFAULT_VALUES,
+} from "./constants";
+import * as userApi from "./api/auth";
 
+// ==================== ТИПЫ ====================
 interface Props {
-  token: string; // Ваш пропуск в мир банкротства
+  token: string | null;
 }
 
 interface PurchaseResponse {
   id: string;
   clientId: string;
   ticketIds: string[];
-  totalCents: number; // Сумма, от которой ваш кошелек плачет
+  totalCents: number;
   status: string;
   createdAt: string;
   filmId: string;
-  seats: { row: number; number: number; priceCents: number }[];
+  seats: string[];
 }
 
 interface ReviewForm {
-  rating: number; // От "ужасно" до "за эти деньги можно было и лучше"
-  text: string; // Ваше мнение, которое никто не прочитает
+  rating: number;
+  text: string;
 }
 
-export default function UserProfilePage({ token }: Props) {
+// =====================================================
+
+const UserProfilePage: React.FC<Props> = ({ token }) => {
+  // Состояние пользователя
   const [user, setUser] = useState<userApi.User | null>(null);
   const [form, setForm] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    gender: "FEMALE", // По умолчанию все женщины - статистика не врет!
-    age: 21, // Вечная молодость разработчика
+    firstName: DEFAULT_VALUES.EMPTY_STRING,
+    lastName: DEFAULT_VALUES.EMPTY_STRING,
+    email: DEFAULT_VALUES.EMPTY_STRING,
+    age: DEFAULT_VALUES.DEFAULT_AGE,
+    gender: "Женский",
   });
-  const [editing, setEditing] = useState(false); // Режим "ой, я ошибся"
+  const [editing, setEditing] = useState(false);
 
-  const [purchases, setPurchases] = useState<PurchaseResponse[]>([]); // Доказательства вашей расточительности
+  // Состояние покупок
+  const [purchases, setPurchases] = useState<PurchaseResponse[]>([]);
   const [filmTitles, setFilmTitles] = useState<Record<string, string>>({});
-  const [reviewForms, setReviewForms] = useState<Record<string, ReviewForm>>({}); // Незавершенные шедевры критики
+  const [reviewForms, setReviewForms] = useState<Record<string, ReviewForm>>({});
 
-  // Загружаем пользователя: "Так вот кто я такой!"
+  // Загрузка данных пользователя
   useEffect(() => {
-    async function fetchUser() {
+    if (!token) return;
+
+    const fetchUserData = async () => {
       try {
-        const currentUser = await userApi.getCurrentUser(token);
-        setUser(currentUser);
+        const res = await axios.get(`${API_BASE_URL}/user`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setUser(res.data);
         setForm({
-          firstName: currentUser.firstName,
-          lastName: currentUser.lastName,
-          email: currentUser.email,
-          gender: currentUser.gender === "FEMALE" ? "Женский" : "Мужской",
-          age: currentUser.age,
+          firstName: res.data.firstName || DEFAULT_VALUES.EMPTY_STRING,
+          lastName: res.data.lastName || DEFAULT_VALUES.EMPTY_STRING,
+          email: res.data.email || DEFAULT_VALUES.EMPTY_STRING,
+          age: res.data.age || DEFAULT_VALUES.DEFAULT_AGE,
+          gender: res.data.gender || "Женский",
         });
       } catch (err) {
-        console.error("Ошибка загрузки профиля:", err);
-        alert("Ошибка загрузки профиля"); // Классическое "все сломалось"
+        console.error("Ошибка загрузки данных пользователя:", err);
       }
-    }
-    fetchUser();
+    };
+
+    fetchUserData();
   }, [token]);
 
-  // Загружаем покупки: напоминание о потраченных деньгах
+  // Загрузка покупок
   useEffect(() => {
-    async function fetchPurchases() {
+    if (!token) return;
+
+    const fetchPurchases = async () => {
       try {
-        const res = await axios.get("http://91.142.94.183:8080/purchases", {
-          headers: { Authorization: `Bearer ${token}` },
-          params: { page: 0, size: 20 }, // 20 покупок? Оптимист!
-        });
+        const res = await axios.get(
+          `${API_BASE_URL}${API_ENDPOINTS.PURCHASES}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+            params: {
+              page: PAGINATION.DEFAULT_PAGE,
+              size: PAGINATION.PURCHASES_PAGE_SIZE,
+            },
+          }
+        );
 
         const mapped: PurchaseResponse[] = res.data.data.map((p: any) => ({
           id: p.id,
@@ -75,21 +98,24 @@ export default function UserProfilePage({ token }: Props) {
           status: p.status,
           createdAt: p.createdAt,
           filmId: p.filmId,
-          seats: p.seats || [], // На всякий случай
+          seats: p.seats || [],
         }));
 
         setPurchases(mapped);
 
+        // Загрузка информации о фильмах
         const uniqueIds = [...new Set(mapped.map((p) => p.filmId))];
         const filmData: Record<string, string> = {};
 
         await Promise.all(
           uniqueIds.map(async (id) => {
             try {
-              const filmRes = await axios.get(`http://91.142.94.183:8080/films/${id}`);
+              const filmRes = await axios.get(
+                `${API_BASE_URL}${API_ENDPOINTS.FILMS}/${id}`
+              );
               filmData[id] = filmRes.data.title;
             } catch {
-              filmData[id] = "Неизвестный фильм"; // Фильм-призрак
+              filmData[id] = "Неизвестный фильм";
             }
           })
         );
@@ -98,138 +124,294 @@ export default function UserProfilePage({ token }: Props) {
       } catch (err) {
         console.error("Ошибка загрузки покупок:", err);
       }
-    }
+    };
 
     fetchPurchases();
   }, [token]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  // Обработка изменения полей формы
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     const { name, value } = e.target;
-    setForm({ ...form, [name]: name === "age" ? Number(value) : value });
-  };
-
-  // Сохраняем профиль: теперь система знает о вас все
-  const handleSaveProfile = async () => {
-    if (!user) return;
-    try {
-      const updated = await userApi.updateCurrentUser(token, {
-        firstName: form.firstName,
-        lastName: form.lastName,
-        email: form.email,
-        age: form.age,
-        gender: form.gender === "Женский" ? "FEMALE" : "MALE",
-      });
-      setUser(updated);
-      setEditing(false);
-      alert("Профиль обновлен!"); // Маленькая победа
-    } catch (err) {
-      console.error("Ошибка обновления профиля:", err);
-      alert("Ошибка обновления профиля"); // Или не очень
-    }
-  };
-
-  const handleReviewChange = (filmId: string, field: "rating" | "text", value: string | number) => {
-    setReviewForms((prev) => ({
+    setForm((prev) => ({
       ...prev,
-      [filmId]: { ...prev[filmId], [field]: value },
+      [name]: name === "age" ? parseInt(value) : value,
     }));
   };
 
-  // Отправляем отзыв: ваш голос важен (нет)
-  const handleSubmitReview = async (filmId: string) => {
-    const review = reviewForms[filmId];
-    if (!review || !review.rating || !review.text) return alert("Заполните рейтинг и текст отзыва");
+  // Сохранение профиля
+  const handleSaveProfile = async () => {
+    if (!token) return;
 
     try {
-      await axios.post(
-        `http://91.142.94.183:8080/films/${filmId}/reviews`,
-        { rating: review.rating, text: review.text },
-        { headers: { Authorization: `Bearer ${token}` } }
+      await axios.put(
+        `${API_BASE_URL}/user`,
+        {
+          firstName: form.firstName,
+          lastName: form.lastName,
+          email: form.email,
+          age: form.age,
+          gender: form.gender === "Женский" ? "FEMALE" : "MALE",
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
       );
-      alert("Отзыв отправлен!"); // Еще одна маленькая победа
-      setReviewForms((prev) => ({ ...prev, [filmId]: { rating: 0, text: "" } }));
+
+      alert("Профиль успешно обновлен!");
+      setEditing(false);
     } catch (err) {
-      console.error("Ошибка отправки отзыва:", err);
-      alert("Не удалось отправить отзыв"); // Интернет сказал "нет"
+      console.error("Ошибка обновления профиля:", err);
+      alert("Ошибка при обновлении профиля");
     }
   };
 
-  if (!user) return <div className="text-center text-light mt-5">Загрузка профиля...</div>;
+  // Добавление отзыва
+  const handleAddReview = async (purchaseId: string) => {
+    if (!token || !reviewForms[purchaseId]) return;
 
-  return (
-    <div className="min-vh-100 bg-dark text-light p-4">
-      {/* Карточка профиля: здесь живут ваши секреты */}
-      <div className="card text-dark mb-4">
-        <div className="card-body">
-          <h2 className="card-title text-primary mb-3">Профиль</h2>
-          {editing ? (
-            <>
-              <input className="form-control mb-2" name="firstName" value={form.firstName} onChange={handleChange} placeholder="Имя" />
-              <input className="form-control mb-2" name="lastName" value={form.lastName} onChange={handleChange} placeholder="Фамилия" />
-              <input className="form-control mb-2" name="email" value={form.email} onChange={handleChange} placeholder="Email" />
-              <select className="form-control mb-2" name="gender" value={form.gender} onChange={handleChange}>
-                <option>Женский</option>
-                <option>Мужской</option>
-              </select>
-              <input className="form-control mb-2" name="age" type="number" value={form.age} onChange={handleChange} placeholder="Возраст" />
-              <button className="btn btn-success me-2" onClick={handleSaveProfile}>Сохранить</button>
-              <button className="btn btn-secondary" onClick={() => setEditing(false)}>Отмена</button>
-            </>
-          ) : (
-            <>
-              <p className="text-light">Имя: {form.firstName}</p>
-              <p className="text-light">Фамилия: {form.lastName}</p>
-              <p className="text-light">Email: {form.email}</p>
-              <p className="text-light">Пол: {form.gender}</p>
-              <p className="text-light">Возраст: {form.age}</p>
-              <button className="btn btn-primary" onClick={() => setEditing(true)}>Редактировать</button>
-            </>
-          )}
+    const review = reviewForms[purchaseId];
+    const purchase = purchases.find((p) => p.id === purchaseId);
+    if (!purchase) return;
+
+    try {
+      await axios.post(
+        `${API_BASE_URL}${API_ENDPOINTS.FILMS}/${purchase.filmId}${API_ENDPOINTS.REVIEWS}`,
+        {
+          rating: review.rating,
+          text: review.text,
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      alert("Отзыв успешно добавлен!");
+      setReviewForms((prev) => ({
+        ...prev,
+        [purchaseId]: {
+          rating: DEFAULT_VALUES.ZERO,
+          text: DEFAULT_VALUES.EMPTY_STRING,
+        },
+      }));
+    } catch (err) {
+      console.error("Ошибка при добавлении отзыва:", err);
+      alert("Ошибка при добавлении отзыва");
+    }
+  };
+
+  if (!user) {
+    return (
+      <div className="app-container min-vh-100 d-flex flex-column bg-dark text-light">
+        <div className="container py-5">
+          <p>Загрузка профиля...</p>
         </div>
       </div>
+    );
+  }
 
-      {/* История покупок: галерея ваших финансовых решений */}
-      <div className="mb-4">
-        <h2 className="text-primary mb-3">История покупок</h2>
-        {purchases.length === 0 ? (
-          <p>У вас пока нет покупок 🎟️</p> // Грустный смайлик пустого кошелька
-        ) : (
-          purchases.map((p: PurchaseResponse) => (
-            <div key={p.id} className="card text-dark mb-3">
-              <div className="card-body text-light">
-                <strong>{filmTitles[p.filmId as string] || "Загрузка..."}</strong>
-                <br />
-                Итого: {p.totalCents}₽ {/* Напоминание о потраченном */}
-                <br />
-                Статус: {p.status} {/* Надеемся, что "успешно" */}
+  return (
+    <div className="app-container min-vh-100 d-flex flex-column bg-dark text-light">
+      <div className="container py-5">
+        <h2 className="text-primary mb-4">Мой профиль</h2>
 
-                <div className="mt-2">
-                  <h6>Оставить отзыв:</h6>
+        <div className="row">
+          {/* Секция информации о профиле */}
+          <div className="col-md-6 mb-4">
+            <div className="card bg-secondary text-light p-4">
+              <h5 className="mb-3">Информация о профиле</h5>
+              {!editing ? (
+                <div>
+                  <p>
+                    <strong>Имя:</strong> {form.firstName}
+                  </p>
+                  <p>
+                    <strong>Фамилия:</strong> {form.lastName}
+                  </p>
+                  <p>
+                    <strong>Email:</strong> {form.email}
+                  </p>
+                  <p>
+                    <strong>Возраст:</strong> {form.age}
+                  </p>
+                  <p>
+                    <strong>Пол:</strong> {form.gender}
+                  </p>
+                  <button
+                    className="btn btn-primary"
+                    onClick={() => setEditing(true)}
+                  >
+                    Редактировать
+                  </button>
+                </div>
+              ) : (
+                <div className="d-flex flex-column gap-2">
                   <input
-                    type="number"
-                    min={0}
-                    max={5}
-                    className="form-control mb-1"
-                    placeholder="Рейтинг 0–5"
-                    value={reviewForms[p.filmId as string]?.rating || ""}
-                    onChange={(e) => handleReviewChange(p.filmId, "rating", Number(e.target.value))}
+                    type="text"
+                    name="firstName"
+                    className="form-control"
+                    placeholder="Имя"
+                    value={form.firstName}
+                    onChange={handleInputChange}
                   />
                   <input
                     type="text"
-                    className="form-control mb-1"
-                    placeholder="Текст отзыва"
-                    value={reviewForms[p.filmId as string]?.text || ""}
-                    onChange={(e) => handleReviewChange(p.filmId, "text", e.target.value)}
+                    name="lastName"
+                    className="form-control"
+                    placeholder="Фамилия"
+                    value={form.lastName}
+                    onChange={handleInputChange}
                   />
-                  <button className="btn btn-success" onClick={() => handleSubmitReview(p.filmId)}>
-                    Отправить отзыв
+                  <input
+                    type="email"
+                    name="email"
+                    className="form-control"
+                    placeholder="Email"
+                    value={form.email}
+                    onChange={handleInputChange}
+                  />
+                  <input
+                    type="number"
+                    name="age"
+                    className="form-control"
+                    placeholder="Возраст"
+                    value={form.age}
+                    onChange={handleInputChange}
+                  />
+                  <select
+                    name="gender"
+                    className="form-control"
+                    value={form.gender}
+                    onChange={handleInputChange}
+                  >
+                    <option value="Женский">Женский</option>
+                    <option value="Мужской">Мужской</option>
+                  </select>
+                  <button
+                    className="btn btn-success"
+                    onClick={handleSaveProfile}
+                  >
+                    Сохранить
+                  </button>
+                  <button
+                    className="btn btn-secondary"
+                    onClick={() => setEditing(false)}
+                  >
+                    Отмена
                   </button>
                 </div>
-              </div>
+              )}
             </div>
-          ))
-        )}
+          </div>
+
+          {/* Секция истории покупок */}
+          <div className="col-md-6 mb-4">
+            <div className="card bg-secondary text-light p-4">
+              <h5 className="mb-3">История покупок</h5>
+              {purchases.length === 0 ? (
+                <p>У вас нет покупок</p>
+              ) : (
+                <div className="d-flex flex-column gap-3">
+                  {purchases.map((purchase) => (
+                    <div
+                      key={purchase.id}
+                      className="bg-dark p-3 rounded border border-light"
+                    >
+                      <p>
+                        <strong>Фильм:</strong> {filmTitles[purchase.filmId] || "Загрузка..."}
+                      </p>
+                      <p>
+                        <strong>Сумма:</strong> {purchase.totalCents} ₽
+                      </p>
+                      <p>
+                        <strong>Дата:</strong> {new Date(purchase.createdAt).toLocaleDateString()}
+                      </p>
+                      <p>
+                        <strong>Статус:</strong> {purchase.status}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Секция отзывов */}
+        <div className="row mt-4">
+          <div className="col-12">
+            <h3 className="text-primary mb-4">Оставить отзыв</h3>
+            {purchases.length === 0 ? (
+              <p>У вас нет покупок для оставления отзывов</p>
+            ) : (
+              <div className="d-flex flex-column gap-3">
+                {purchases.map((purchase) => (
+                  <div
+                    key={purchase.id}
+                    className="card bg-secondary text-light p-4"
+                  >
+                    <h6 className="mb-3">
+                      {filmTitles[purchase.filmId] || "Загрузка..."}
+                    </h6>
+                    <div className="d-flex flex-column gap-2">
+                      <div>
+                        <label className="mb-2">Оценка:</label>
+                        <select
+                          className="form-control"
+                          value={reviewForms[purchase.id]?.rating || 0}
+                          onChange={(e) =>
+                            setReviewForms((prev) => ({
+                              ...prev,
+                              [purchase.id]: {
+                                ...prev[purchase.id],
+                                rating: parseInt(e.target.value),
+                              },
+                            }))
+                          }
+                        >
+                          <option value={0}>Выберите оценку</option>
+                          <option value={1}>1 звезда</option>
+                          <option value={2}>2 звезды</option>
+                          <option value={3}>3 звезды</option>
+                          <option value={4}>4 звезды</option>
+                          <option value={5}>5 звезд</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="mb-2">Ваш отзыв:</label>
+                        <textarea
+                          className="form-control"
+                          placeholder="Напишите ваш отзыв..."
+                          value={reviewForms[purchase.id]?.text || DEFAULT_VALUES.EMPTY_STRING}
+                          onChange={(e) =>
+                            setReviewForms((prev) => ({
+                              ...prev,
+                              [purchase.id]: {
+                                ...prev[purchase.id],
+                                text: e.target.value,
+                              },
+                            }))
+                          }
+                          rows={3}
+                        ></textarea>
+                      </div>
+                      <button
+                        className="btn btn-primary"
+                        onClick={() => handleAddReview(purchase.id)}
+                      >
+                        Отправить отзыв
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
-}
+};
+
+export default UserProfilePage;
