@@ -1,18 +1,18 @@
-import api from "./http";
+import apiClient from "../utils/apiClient";
 
+export interface Session {
+  id: string;
+  movieId: string;
+  hallId: string;
+  startAt: string;
+}
 
-
-export const getSessionsByFilm = async (filmId: string) => {
-  const res = await api.get("/sessions", { params: { filmId } });
-  return res.data.data; 
-};
-
-export const getSessionById = async (id: string) => {
-  const res = await api.get(`/sessions/${id}`);
+export async function getSessionById(id: string): Promise<Session> {
+  const res = await apiClient.get(`/sessions/${id}`);
   return res.data;
-};
+}
 
-export const getHallPlan = async (hallId: string) => {
-  const res = await api.get(`/halls/${hallId}/plan`);
+export async function getHallPlan(hallId: string): Promise<any> {
+  const res = await apiClient.get(`/halls/${hallId}/plan`);
   return res.data;
-};
+}

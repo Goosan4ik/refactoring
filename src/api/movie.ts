@@ -1,4 +1,4 @@
-import { getCurrentUser } from "./auth";
+import apiClient from "../utils/apiClient";
 
 export interface Film {
   id: string;
@@ -45,18 +45,13 @@ export const MOCK_FILMS: Film[] = [
   },
 ];
 
-
 export async function getFilms(): Promise<Film[]> {
-  const res = await fetch("http://91.142.94.183:8080/films");
-  if (!res.ok) throw new Error("Ошибка загрузки фильмов");
-  const json: FilmResponse = await res.json();
+  const res = await apiClient.get("/films");
+  const json: FilmResponse = res.data;
   return json.data;
-  return new Promise(resolve => setTimeout(() => resolve(MOCK_FILMS), 300));
-  
 }
 
 export async function getFilmById(id: string): Promise<Film> {
-  const res = await fetch(`http://91.142.94.183:8080/films/${id}`);
-  if (!res.ok) throw new Error("Фильм не найден");
-  return res.json();
+  const res = await apiClient.get(`/films/${id}`);
+  return res.data;
 }
