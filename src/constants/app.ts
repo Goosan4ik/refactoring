@@ -18,6 +18,8 @@ export const MOVIE_CARD_WIDTH = "18rem";
 export const SEAT_GRID_GAP = "5px";
 export const SEAT_CONTAINER_GAP = "10px";
 export const FORM_MAX_WIDTH = "400px";
+export const SIDEBAR_WIDTH = "250px";
 
 // UI Color Constants
 export const LEGEND_ITEM_SIZE = "20px";
+export const SIDEBAR_BACKGROUND_COLOR = "#1f1f1f";
