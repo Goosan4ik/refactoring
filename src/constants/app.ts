@@ -2,9 +2,15 @@
 export const DEFAULT_PAGE_NUMBER = 0;
 export const REVIEWS_PAGE_SIZE = 20;
 export const SESSIONS_PAGE_SIZE = 100;
+export const PURCHASES_PAGE_SIZE = 20;
 
 // User Registration Constants
 export const DEFAULT_USER_AGE = 21;
+export const DEFAULT_GENDER = "MALE";
+
+// Review Rating Constants
+export const MIN_RATING = 0;
+export const MAX_RATING = 5;
 
 // UI Layout Constants
 export const SEAT_BUTTON_SIZE = "50px";
