@@ -1,0 +1,2 @@
+export const SESSIONS_PAGE_INDEX_DEFAULT = 0;
+export const SESSIONS_PAGE_SIZE_DEFAULT = 100;

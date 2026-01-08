@@ -2,6 +2,19 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import * as movieApi from "./api/movie";
 import ReviewsDisplay from "./ReviewsDisplay";
+import { API_BASE_URL } from "./config/api";
+import {
+  SESSIONS_PAGE_INDEX_DEFAULT,
+  SESSIONS_PAGE_SIZE_DEFAULT,
+} from "./config/pagination";
+import {
+  DATE_INPUT_WIDTH_PX,
+  HALL_PLAN_GAP_PX,
+  LEGEND_SWATCH_SIZE_PX,
+  SEAT_BUTTON_SIZE_PX,
+  SEAT_GRID_GAP_PX,
+} from "./ui/sizes";
+import { MOVIE_POSTER_PLACEHOLDER_URL } from "./assets/placeholders";
 
 // Интерфейсы - потому что TypeScript не доверяет нам
 interface Props {
@@ -32,12 +45,12 @@ interface Category {
 
 interface HallPlan {
   hallId: string; // ID зала
-  rows: number;  // Сколько рядов придется пробежать до туалета
+  rows: number; // Сколько рядов придется пробежать до туалета
   seats: Seat[]; // Все места, хорошие и не очень
-  categories: Category[];  // Разные цены за одно и то же сидение
+  categories: Category[]; // Разные цены за одно и то же сидение
 }
 
-// на этом месте у вас должен задергаться глаз, зеленый цвет уже ненавистен 
+// на этом месте у вас должен задергаться глаз, зеленый цвет уже ненавистен
 
 interface Ticket {
   id: string; // ID билета
@@ -76,13 +89,16 @@ const MovieDetailsPage: React.FC<Props> = ({ movie, onBack }) => {
 
   const token = localStorage.getItem("token"); // Наш пропуск в мир кино
 
-
   useEffect(() => {
     const fetchSessions = async () => {
       try {
         setLoadingSessions(true); // Включаем режим ожидания
-        const response = await axios.get("http://91.142.94.183:8080/sessions", {
-          params: { page: 0, size: 100, filmId: movie.id }, // 100 сеансов? Оптимист!
+        const response = await axios.get(`${API_BASE_URL}/sessions`, {
+          params: {
+            page: SESSIONS_PAGE_INDEX_DEFAULT,
+            size: SESSIONS_PAGE_SIZE_DEFAULT,
+            filmId: movie.id,
+          }, // 100 сеансов? Оптимист!
         });
         setSessions(response.data.data || []); // Ура, сеансы пришли!
       } catch (err) {
@@ -92,7 +108,7 @@ const MovieDetailsPage: React.FC<Props> = ({ movie, onBack }) => {
       }
     };
     fetchSessions();
-  }, [movie.id]); 
+  }, [movie.id]);
 
   // Фильтруем сеансы по дате
   const filteredSessions = sessions.filter(
@@ -106,11 +122,11 @@ const MovieDetailsPage: React.FC<Props> = ({ movie, onBack }) => {
     const fetchHallPlanAndTickets = async () => {
       try {
         setLoadingPlan(true); // Опять ждем...
-        setSelectedSeats([]);  // Сбрасываем выбор, чтобы начать мучиться заново
+        setSelectedSeats([]); // Сбрасываем выбор, чтобы начать мучиться заново
         // Два запроса одновременно - потому что мы можем!
         const [planRes, ticketsRes] = await Promise.all([
-          axios.get(`http://91.142.94.183:8080/halls/${selectedSession.hallId}/plan`),
-          axios.get(`http://91.142.94.183:8080/sessions/${selectedSession.id}/tickets`),
+          axios.get(`${API_BASE_URL}/halls/${selectedSession.hallId}/plan`),
+          axios.get(`${API_BASE_URL}/sessions/${selectedSession.id}/tickets`),
         ]);
 
         setHallPlan(planRes.data); // План зала готов!
@@ -128,13 +144,11 @@ const MovieDetailsPage: React.FC<Props> = ({ movie, onBack }) => {
   // Клик по месту: выбираем или отказываемся
   const handleSeatClick = (seatId: string) => {
     setSelectedSeats((prev) =>
-      prev.includes(seatId)
-        ? prev.filter((id) => id !== seatId) 
-        : [...prev, seatId] 
+      prev.includes(seatId) ? prev.filter((id) => id !== seatId) : [...prev, seatId]
     );
   };
 
-  // здесь моя муза уехала в отпуск простите 
+  // здесь моя муза уехала в отпуск простите
   const getCategory = (catId: string) =>
     hallPlan?.categories.find((c) => c.id === catId); // Ищем нужную категорию
 
@@ -162,7 +176,7 @@ const MovieDetailsPage: React.FC<Props> = ({ movie, onBack }) => {
         if (!ticket) continue;
 
         await axios.post(
-          `http://91.142.94.183:8080/tickets/${ticket.id}/reserve`,
+          `${API_BASE_URL}/tickets/${ticket.id}/reserve`,
           {},
           { headers: { Authorization: `Bearer ${token}` } }
         );
@@ -176,7 +190,7 @@ const MovieDetailsPage: React.FC<Props> = ({ movie, onBack }) => {
 
       // Создаем покупку
       const purchaseRes = await axios.post(
-        "http://91.142.94.183:8080/purchases",
+        `${API_BASE_URL}/purchases`,
         { ticketIds: reservedTickets },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -194,7 +208,7 @@ const MovieDetailsPage: React.FC<Props> = ({ movie, onBack }) => {
 
     try {
       await axios.post(
-        "http://91.142.94.183:8080/payments/process",
+        `${API_BASE_URL}/payments/process`,
         {
           purchaseId: purchase.id,
           cardNumber,
@@ -215,16 +229,16 @@ const MovieDetailsPage: React.FC<Props> = ({ movie, onBack }) => {
 
       // Обновляем билеты
       const ticketsRes = await axios.get(
-        `http://91.142.94.183:8080/sessions/${selectedSession?.id}/tickets`
+        `${API_BASE_URL}/sessions/${selectedSession?.id}/tickets`
       );
       setTickets(ticketsRes.data);
     } catch (err) {
       console.error("Ошибка оплаты:", err);
-      alert("Ошибка оплаты. Проверьте данные карты."); 
+      alert("Ошибка оплаты. Проверьте данные карты.");
     }
   };
 
-  // ВНИМАНИЕ МОМЕНТ КОГДА ТЫ ДОЛЖЕН ЗАПЛАКАТЬ 
+  // ВНИМАНИЕ МОМЕНТ КОГДА ТЫ ДОЛЖЕН ЗАПЛАКАТЬ
   return (
     <div className="app-container min-vh-100 d-flex flex-column bg-dark text-light">
       <div className="container py-5">
@@ -238,7 +252,7 @@ const MovieDetailsPage: React.FC<Props> = ({ movie, onBack }) => {
           {/* Колонка для изображения фильма */}
           <div className="col-md-4 text-center">
             <img
-              src={movie.imageUrl || "https://placehold.co/300x450"} // URL изображения или заглушка
+              src={movie.imageUrl || MOVIE_POSTER_PLACEHOLDER_URL} // URL изображения или заглушка
               className="img-fluid rounded shadow mb-3" // Стили для изображения
               alt={movie.title} // Альтернативный текст для доступности
             />
@@ -265,7 +279,7 @@ const MovieDetailsPage: React.FC<Props> = ({ movie, onBack }) => {
               <input
                 type="date" // Тип input - выбор даты
                 className="form-control d-inline-block" // Стили Bootstrap
-                style={{ width: "200px" }} // Инлайн стиль для ширины
+                style={{ width: `${DATE_INPUT_WIDTH_PX}px` }} // Инлайн стиль для ширины
                 value={selectedDate} // Привязка значения к состоянию
                 onChange={(e) => {
                   // Обработчик изменения даты
@@ -320,7 +334,7 @@ const MovieDetailsPage: React.FC<Props> = ({ movie, onBack }) => {
                 {hallPlan && (
                   <div
                     className="d-flex flex-column align-items-center mb-4"
-                    style={{ gap: "10px" }} // Отступ между элементами
+                    style={{ gap: `${HALL_PLAN_GAP_PX}px` }} // Отступ между элементами
                   >
                     {/* Легенда с категориями мест и их цветами */}
                     <div className="d-flex flex-wrap justify-content-center gap-4 mb-3">
@@ -334,24 +348,24 @@ const MovieDetailsPage: React.FC<Props> = ({ movie, onBack }) => {
                           <span
                             className="btn" // Класс кнопки для стилей
                             style={{
-                              width: "20px", // Фиксированная ширина
-                              height: "20px", // Фиксированная высота
+                              width: `${LEGEND_SWATCH_SIZE_PX}px`, // Фиксированная ширина
+                              height: `${LEGEND_SWATCH_SIZE_PX}px`, // Фиксированная высота
                               padding: 0, // Убираем отступы
                               // Разный цвет для VIP и обычных категорий
-                              backgroundColor:
-                                c.name.toLowerCase().includes("vip")
-                                  ? "#0d6efd" // Синий для VIP
-                                  : "#fff", // Белый для стандартных
+                              backgroundColor: c.name
+                                .toLowerCase()
+                                .includes("vip")
+                                ? "#0d6efd" // Синий для VIP
+                                : "#fff", // Белый для стандартных
                               // Разная рамка в зависимости от категории
-                              border:
-                                c.name.toLowerCase().includes("vip")
-                                  ? "1px solid #0d6efd" // Синяя рамка для VIP
-                                  : "1px solid #fff", // Белая рамка для стандартных
+                              border: c.name.toLowerCase().includes("vip")
+                                ? "1px solid #0d6efd" // Синяя рамка для VIP
+                                : "1px solid #fff", // Белая рамка для стандартных
                             }}
                           ></span>
                           {/* Текст с названием категории и ценой */}
                           <small className="text-light">
-                            {c.name} — {c.priceCents } ₽
+                            {c.name} — {c.priceCents} ₽
                           </small>
                         </div>
                       ))}
@@ -360,7 +374,11 @@ const MovieDetailsPage: React.FC<Props> = ({ movie, onBack }) => {
                       <div className="d-flex align-items-center gap-1">
                         <span
                           className="btn btn-outline-light" // Стиль контурной кнопки
-                          style={{ width: "20px", height: "20px", padding: 0 }} // Размеры
+                          style={{
+                            width: `${LEGEND_SWATCH_SIZE_PX}px`,
+                            height: `${LEGEND_SWATCH_SIZE_PX}px`,
+                            padding: 0,
+                          }} // Размеры
                         ></span>
                         <small>Свободно</small> {/* Текст пояснения */}
                       </div>
@@ -368,7 +386,11 @@ const MovieDetailsPage: React.FC<Props> = ({ movie, onBack }) => {
                       <div className="d-flex align-items-center gap-1">
                         <span
                           className="btn btn-warning" // Стиль предупреждения
-                          style={{ width: "20px", height: "20px", padding: 0 }} // Размеры
+                          style={{
+                            width: `${LEGEND_SWATCH_SIZE_PX}px`,
+                            height: `${LEGEND_SWATCH_SIZE_PX}px`,
+                            padding: 0,
+                          }} // Размеры
                         ></span>
                         <small>Забронировано</small> {/* Текст пояснения */}
                       </div>
@@ -376,7 +398,11 @@ const MovieDetailsPage: React.FC<Props> = ({ movie, onBack }) => {
                       <div className="d-flex align-items-center gap-1">
                         <span
                           className="btn btn-danger" // Стиль опасности
-                          style={{ width: "20px", height: "20px", padding: 0 }} // Размеры
+                          style={{
+                            width: `${LEGEND_SWATCH_SIZE_PX}px`,
+                            height: `${LEGEND_SWATCH_SIZE_PX}px`,
+                            padding: 0,
+                          }} // Размеры
                         ></span>
                         <small>Продано</small> {/* Текст пояснения */}
                       </div>
@@ -398,8 +424,8 @@ const MovieDetailsPage: React.FC<Props> = ({ movie, onBack }) => {
                             style={{
                               display: "grid", // Используем CSS Grid для расположения
                               // Динамическое количество колонок по количеству мест в ряду
-                              gridTemplateColumns: `repeat(${rowSeats.length}, 50px)`,
-                              gap: "5px", // Отступ между местами
+                              gridTemplateColumns: `repeat(${rowSeats.length}, ${SEAT_BUTTON_SIZE_PX}px)`,
+                              gap: `${SEAT_GRID_GAP_PX}px`, // Отступ между местами
                             }}
                           >
                             {/* Рендерим каждое место в ряду */}
@@ -414,14 +440,18 @@ const MovieDetailsPage: React.FC<Props> = ({ movie, onBack }) => {
                               // Определяем цвет кнопки в зависимости от статуса
                               let color = "btn-outline-light"; // По умолчанию - свободно
                               if (status === "SOLD") color = "btn-danger"; // Красный для проданных
-                              else if (status === "RESERVED") color = "btn-warning"; // Желтый для забронированных
+                              else if (status === "RESERVED")
+                                color = "btn-warning"; // Желтый для забронированных
                               else if (isSelected) color = "btn-success"; // Зеленый для выбранных
 
                               return (
                                 <button
                                   key={seat.id} // Уникальный ключ по ID места
                                   className={`btn ${color}`} // Классы кнопки с определенным цветом
-                                  style={{ width: "50px", height: "50px" }} // Фиксированный размер
+                                  style={{
+                                    width: `${SEAT_BUTTON_SIZE_PX}px`,
+                                    height: `${SEAT_BUTTON_SIZE_PX}px`,
+                                  }} // Фиксированный размер
                                   disabled={status !== "AVAILABLE"} // Отключаем если место не доступно
                                   onClick={() => handleSeatClick(seat.id)} // Обработчик клика
                                   // Всплывающая подсказка с информацией о месте
@@ -441,68 +471,71 @@ const MovieDetailsPage: React.FC<Props> = ({ movie, onBack }) => {
 
                 {/* Блок для выбранных мест и кнопки бронирования */}
                 {selectedSeats.length > 0 && hallPlan && !purchase && (
-              <div className="text-center mb-3">
-                  {/* Список выбранных мест с подробной информацией */}
-                  <p>
-                  <strong>Выбраны места:</strong>{" "}
-                  {selectedSeats
-                    .map((id) => {
-                      // Для каждого выбранного места находим соответствующий билет
-                      const ticket = tickets.find((t) => t.seatId === id);
-                      // Если билет не найден или нет плана зала, возвращаем пустую строку
-                      if (!ticket || !hallPlan) return ""; 
+                  <div className="text-center mb-3">
+                    {/* Список выбранных мест с подробной информацией */}
+                    <p>
+                      <strong>Выбраны места:</strong>{" "}
+                      {selectedSeats
+                        .map((id) => {
+                          // Для каждого выбранного места находим соответствующий билет
+                          const ticket = tickets.find((t) => t.seatId === id);
+                          // Если билет не найден или нет плана зала, возвращаем пустую строку
+                          if (!ticket || !hallPlan) return "";
 
-                      // Находим объект места по ID
-                      const seat = hallPlan.seats.find((s) => s.id === id);
-                      // Если место не найдено, возвращаем пустую строку
-                      if (!seat) return "";
+                          // Находим объект места по ID
+                          const seat = hallPlan.seats.find((s) => s.id === id);
+                          // Если место не найдено, возвращаем пустую строку
+                          if (!seat) return "";
 
-                      // Получаем категорию билета
-                      const cat = getCategory(ticket.categoryId);
-                      // Форматируем информацию о месте: ряд, номер, категория, цена
-                      return `Ряд ${seat.row + 1}, №${seat.number} (${cat?.name} — ${
-                        cat ? cat.priceCents : 0
-                      } ₽)`;
-                    })
-                    .filter(Boolean) // Убираем пустые строки
-                    .join("; ")} {/* Объединяем все строки через точку с запятой */}
-                </p>
+                          // Получаем категорию билета
+                          const cat = getCategory(ticket.categoryId);
+                          // Форматируем информацию о месте: ряд, номер, категория, цена
+                          return `Ряд ${seat.row + 1}, №${seat.number} (${cat?.name} — ${
+                            cat ? cat.priceCents : 0
+                          } ₽)`;
+                        })
+                        .filter(Boolean) // Убираем пустые строки
+                        .join("; ")} {/* Объединяем все строки через точку с запятой */}
+                    </p>
 
-                {/* Общая стоимость выбранных мест */}
-                <p>
-                  <strong>Итого:</strong> {totalPrice} ₽
-                </p>
-                {/* Кнопка для бронирования выбранных мест */}
-                <button className="btn btn-primary px-5" onClick={handleReserve}>
-                  Забронировать
-                </button>
-              </div>
-            )}
+                    {/* Общая стоимость выбранных мест */}
+                    <p>
+                      <strong>Итого:</strong> {totalPrice} ₽
+                    </p>
+                    {/* Кнопка для бронирования выбранных мест */}
+                    <button
+                      className="btn btn-primary px-5"
+                      onClick={handleReserve}
+                    >
+                      Забронировать
+                    </button>
+                  </div>
+                )}
 
                 {/* Блок оплаты который показывается после успешного бронирования */}
-                  {purchase && hallPlan && (
-                    <div className="text-center mt-4 p-3 border border-light rounded">
-                      <h5>Оплата</h5>
-                      {/* Информация о забронированных местах */}
-                      <p>
-                        <strong>Места:</strong>{" "}
-                        {tickets
-                          .filter((t) => purchase.ticketIds.includes(t.id)) // Фильтруем билеты входящие в покупку
-                          .map((t) => {
-                            // Для каждого билета получаем категорию и место
-                            const cat = getCategory(t.categoryId);
-                            const seat = hallPlan.seats.find((s) => s.id === t.seatId);
-                            // Форматируем информацию о месте
-                            return seat
-                              ? `Ряд ${seat.row + 1}, №${seat.number} (${cat?.name} — ${
-                                  cat?.priceCents
-                                } ₽)`
-                              : ""; // Пустая строка если место не найдено
-                          })
-                          .join("; ")} {/* Объединяем через точку с запятой */}
-                      </p>
-                      {/* Общая сумма к оплате */}
-                                        <p>
+                {purchase && hallPlan && (
+                  <div className="text-center mt-4 p-3 border border-light rounded">
+                    <h5>Оплата</h5>
+                    {/* Информация о забронированных местах */}
+                    <p>
+                      <strong>Места:</strong>{" "}
+                      {tickets
+                        .filter((t) => purchase.ticketIds.includes(t.id)) // Фильтруем билеты входящие в покупку
+                        .map((t) => {
+                          // Для каждого билета получаем категорию и место
+                          const cat = getCategory(t.categoryId);
+                          const seat = hallPlan.seats.find((s) => s.id === t.seatId);
+                          // Форматируем информацию о месте
+                          return seat
+                            ? `Ряд ${seat.row + 1}, №${seat.number} (${cat?.name} — ${
+                                cat?.priceCents
+                              } ₽)`
+                            : ""; // Пустая строка если место не найдено
+                        })
+                        .join("; ")} {/* Объединяем через точку с запятой */}
+                    </p>
+                    {/* Общая сумма к оплате */}
+                    <p>
                       <strong>Сумма:</strong>{" "}
                       {tickets
                         .filter((t) => purchase.ticketIds.includes(t.id)) // Фильтруем билеты покупки
@@ -514,57 +547,56 @@ const MovieDetailsPage: React.FC<Props> = ({ movie, onBack }) => {
                       ₽
                     </p>
 
-                      {/* Форма для ввода данных банковской карты */}
-                      <div className="d-flex flex-column align-items-center gap-2">
-                        {/* Поле для номера карты */}
-                        <input
-                          placeholder="Номер карты"
-                          className="form-control"
-                          value={cardNumber}
-                          onChange={(e) => setCardNumber(e.target.value)}
-                        />
-                        {/* Поле для срока действия карты */}
-                        <input
-                          placeholder="Срок (MM/YY)"
-                          className="form-control"
-                          value={expiryDate}
-                          onChange={(e) => setExpiryDate(e.target.value)}
-                        />
-                        {/* Поле для CVV кода */}
-                        <input
-                          placeholder="CVV"
-                          className="form-control"
-                          value={cvv}
-                          onChange={(e) => setCvv(e.target.value)}
-                        />
-                        {/* Поле для имени владельца карты */}
-                        <input
-                          placeholder="Имя владельца карты"
-                          className="form-control"
-                          value={cardHolderName}
-                          onChange={(e) => setCardHolderName(e.target.value)}
-                        />
-                        {/* Кнопка для выполнения оплаты */}
-                        <button
-                          className="btn btn-success px-5 mt-2"
-                          onClick={handlePayment}
-                        >
-                          Оплатить
-                        </button>
-                      </div>
+                    {/* Форма для ввода данных банковской карты */}
+                    <div className="d-flex flex-column align-items-center gap-2">
+                      {/* Поле для номера карты */}
+                      <input
+                        placeholder="Номер карты"
+                        className="form-control"
+                        value={cardNumber}
+                        onChange={(e) => setCardNumber(e.target.value)}
+                      />
+                      {/* Поле для срока действия карты */}
+                      <input
+                        placeholder="Срок (MM/YY)"
+                        className="form-control"
+                        value={expiryDate}
+                        onChange={(e) => setExpiryDate(e.target.value)}
+                      />
+                      {/* Поле для CVV кода */}
+                      <input
+                        placeholder="CVV"
+                        className="form-control"
+                        value={cvv}
+                        onChange={(e) => setCvv(e.target.value)}
+                      />
+                      {/* Поле для имени владельца карты */}
+                      <input
+                        placeholder="Имя владельца карты"
+                        className="form-control"
+                        value={cardHolderName}
+                        onChange={(e) => setCardHolderName(e.target.value)}
+                      />
+                      {/* Кнопка для выполнения оплаты */}
+                      <button
+                        className="btn btn-success px-5 mt-2"
+                        onClick={handlePayment}
+                      >
+                        Оплатить
+                      </button>
                     </div>
-                  )}
+                  </div>
+                )}
               </div>
             )}
-               
           </div>
-           {/* Компонент для отображения отзывов о фильме */}
-           <ReviewsDisplay movieId={movie.id} />
+          {/* Компонент для отображения отзывов о фильме */}
+          <ReviewsDisplay movieId={movie.id} />
         </div>
       </div>
     </div>
   );
-}
+};
 
 // Экспорт компонента по умолчанию
 export default MovieDetailsPage;
