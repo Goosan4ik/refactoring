@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import { DEFAULT_PAGE_NUMBER, REVIEWS_PAGE_SIZE } from "./constants/app";
 
 interface Review {
   id: string;
@@ -26,7 +27,7 @@ export default function ReviewsDisplay({ movieId }: Props) {
         const response = await axios.get(
           `http://91.142.94.183:8080/films/${movieId}/reviews`,
           {
-            params: { page: 0, size: 20 },
+            params: { page: DEFAULT_PAGE_NUMBER, size: REVIEWS_PAGE_SIZE },
           }
         );
         setReviews(response.data.data || []);

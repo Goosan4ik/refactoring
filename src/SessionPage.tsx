@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { getSessionById, getHallPlan } from "./api/session";
+import { SEAT_BUTTON_SIZE, SEAT_GRID_GAP } from "./constants/app";
 
 interface Props {
   sessionId: string;
@@ -101,8 +102,8 @@ const SessionPage: React.FC<Props> = ({ sessionId, onBack }) => {
                 key={rowNum}
                 style={{
                   display: "grid",
-                  gridTemplateColumns: `repeat(${rowSeats.length}, 50px)`,
-                  gap: "5px",
+                  gridTemplateColumns: `repeat(${rowSeats.length}, ${SEAT_BUTTON_SIZE})`,
+                  gap: SEAT_GRID_GAP,
                 }}
               >
                 {rowSeats.map((seat) => {
@@ -122,7 +123,7 @@ const SessionPage: React.FC<Props> = ({ sessionId, onBack }) => {
                     <button
                       key={seat.id}
                       className={`btn ${color}`}
-                      style={{ width: "50px", height: "50px" }}
+                      style={{ width: SEAT_BUTTON_SIZE, height: SEAT_BUTTON_SIZE }}
                       disabled={isTaken}
                       onClick={() => handleSeatClick(seat.id)}
                       title={`${category?.name || "Место"} — ${

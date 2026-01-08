@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { loginUser } from "./api/auth";
+import { FORM_MAX_WIDTH } from "./constants/app";
 
 interface Props {
   onLogin: (token: { accessToken: string }) => void;
@@ -25,7 +26,7 @@ export default function LoginPage({ onLogin }: Props) {
 
   return (
     <div className="d-flex flex-column align-items-center justify-content-center vh-100">
-      <form onSubmit={handleLogin} className="d-flex flex-column gap-3 w-100" style={{ maxWidth: "400px" }}>
+      <form onSubmit={handleLogin} className="d-flex flex-column gap-3 w-100" style={{ maxWidth: FORM_MAX_WIDTH }}>
         <h2 className="text-center mb-3">Вход</h2>
         <input
           type="email"

@@ -1,5 +1,6 @@
 import React from "react";
 import * as movie from "./api/movie";
+import { MOVIE_CARD_WIDTH } from "./constants/app";
 
 interface Props {
   movie: movie.Film;
@@ -7,7 +8,7 @@ interface Props {
 }
 
 const MovieCard: React.FC<Props> = ({ movie, onSelect }) => (
-  <div className="card" style={{ width: "18rem", cursor: "pointer" }} onClick={onSelect}>
+  <div className="card" style={{ width: MOVIE_CARD_WIDTH, cursor: "pointer" }} onClick={onSelect}>
     <img src={movie.imageUrl || "https://placehold.co/300x450"} className="card-img-top" alt={movie.title} />
     <div className="card-body">
       <h5 className="card-title">{movie.title}</h5>

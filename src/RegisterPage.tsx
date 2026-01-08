@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { registerUser } from "./api/auth";
+import { DEFAULT_USER_AGE, FORM_MAX_WIDTH, DEFAULT_GENDER } from "./constants/app";
 
 interface Props {
   onRegister: (token: { accessToken: string }) => void;
@@ -12,8 +13,8 @@ export default function RegisterPage({ onRegister }: Props) {
     password: "",
     firstName: "",
     lastName: "",
-    age: 21,
-    gender: "MALE" as "MALE" | "FEMALE",
+    age: DEFAULT_USER_AGE,
+    gender: DEFAULT_GENDER as "MALE" | "FEMALE",
   });
   const [error, setError] = useState("");
   const navigate = useNavigate();
@@ -35,7 +36,7 @@ export default function RegisterPage({ onRegister }: Props) {
 
   return (
     <div className="d-flex flex-column align-items-center justify-content-center vh-100">
-      <form onSubmit={handleRegister} className="d-flex flex-column gap-3 w-100" style={{ maxWidth: "400px" }}>
+      <form onSubmit={handleRegister} className="d-flex flex-column gap-3 w-100" style={{ maxWidth: FORM_MAX_WIDTH }}>
         <h2 className="text-center mb-3">Регистрация</h2>
         <input name="email" type="email" placeholder="Email" className="form-control" onChange={handleChange} />
         <input name="password" type="password" placeholder="Пароль" className="form-control" onChange={handleChange} />
