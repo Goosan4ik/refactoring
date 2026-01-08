@@ -92,7 +92,7 @@ const MovieDetailsPage: React.FC<Props> = ({ movie, onBack }) => {
     (s) => s.startAt.slice(0, 10) === selectedDate
   );
 
-  // Load hall plan and tickets in parallel when session is selected
+  // Параллельная загрузка плана зала и билетов при выборе сеанса
   useEffect(() => {
     if (!selectedSession) return;
 
@@ -139,12 +139,12 @@ const MovieDetailsPage: React.FC<Props> = ({ movie, onBack }) => {
     return sum + (cat ? cat.priceCents : 0);
   }, 0);
 
-  // Reserve seats and create purchase in one transaction
+  // Бронирование мест и создание покупки в одной транзакции
   const handleReserve = async () => {
     if (!token) return alert("Сначала авторизуйтесь");
 
     try {
-      // Reserve each ticket individually
+      // Резервируем каждый билет отдельно
       for (const seatId of selectedSeats) {
         const ticket = tickets.find((t) => t.seatId === seatId);
         if (!ticket) continue;
@@ -161,7 +161,7 @@ const MovieDetailsPage: React.FC<Props> = ({ movie, onBack }) => {
         .filter((t) => selectedSeats.includes(t.seatId))
         .map((t) => t.id);
 
-      // Create purchase from reserved tickets
+      // Создаём покупку из забронированных билетов
       const purchaseRes = await axios.post(
         "http://91.142.94.183:8080/purchases",
         { ticketIds: reservedTickets },
@@ -175,7 +175,7 @@ const MovieDetailsPage: React.FC<Props> = ({ movie, onBack }) => {
     }
   };
 
-  // Process payment and refresh ticket statuses
+  // Обработка оплаты и обновление статусов билетов
   const handlePayment = async () => {
     if (!token || !purchase) return alert("Ошибка оплаты");
 
@@ -193,7 +193,7 @@ const MovieDetailsPage: React.FC<Props> = ({ movie, onBack }) => {
       );
       alert("Оплата прошла успешно!");
       
-      // Reset form and refresh ticket statuses
+      // Сбрасываем форму и обновляем статусы билетов
       setPurchase(null);
       setSelectedSeats([]);
       setCardNumber("");
@@ -287,7 +287,7 @@ const MovieDetailsPage: React.FC<Props> = ({ movie, onBack }) => {
                     className="d-flex flex-column align-items-center mb-4"
                     style={{ gap: "10px" }}
                   >
-                    {/* Legend with seat categories and statuses */}
+                    {/* Легенда с категориями мест и статусами */}
                     <div className="d-flex flex-wrap justify-content-center gap-4 mb-3">
                       {hallPlan.categories.map((c) => (
                         <div
@@ -339,7 +339,7 @@ const MovieDetailsPage: React.FC<Props> = ({ movie, onBack }) => {
                       </div>
                     </div>
 
-                    {/* Render seat grid by rows */}
+                    {/* Рендер сетки мест по рядам */}
                     {Array.from(new Set(hallPlan.seats.map((s) => s.row)))
                       .sort((a, b) => a - b)
                       .map((rowNum) => {
@@ -361,7 +361,7 @@ const MovieDetailsPage: React.FC<Props> = ({ movie, onBack }) => {
                               const category = getCategory(seat.categoryId);
                               const isSelected = selectedSeats.includes(seat.id);
 
-                              // Determine button color based on seat status
+                              // Определяем цвет кнопки по статусу места
                               let color = "btn-outline-light";
                               if (status === "SOLD") color = "btn-danger";
                               else if (status === "RESERVED") color = "btn-warning";
