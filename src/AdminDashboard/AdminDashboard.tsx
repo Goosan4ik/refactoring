@@ -3,6 +3,7 @@ import MoviesManagement from "./MoviesManagement";
 import HallsManagement from "./HallsManagement";
 import CategoriesManagement from "./CategoriesManagement";
 import SessionsManagement from "./SessionsManagement";
+import { SIDEBAR_WIDTH, SIDEBAR_BACKGROUND_COLOR } from "../constants/app";
 
 interface AdminPanelProps {
   onBack: () => void;
@@ -32,7 +33,7 @@ export default function AdminDashboard({ onBack }: AdminPanelProps) {
     <div className="d-flex min-vh-100 bg-dark text-light">
       <div
         className="p-4 border-end border-secondary"
-        style={{ width: "250px", backgroundColor: "#1f1f1f" }}
+        style={{ width: SIDEBAR_WIDTH, backgroundColor: SIDEBAR_BACKGROUND_COLOR }}
       >
         <h3 className="text-primary mb-4 text-center">🎬 Админ Панель</h3>
         <ul className="list-unstyled">
