@@ -2,6 +2,14 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import * as movieApi from "./api/movie";
 import ReviewsDisplay from "./ReviewsDisplay";
+import {
+  DEFAULT_PAGE_NUMBER,
+  SESSIONS_PAGE_SIZE,
+  SEAT_BUTTON_SIZE,
+  SEAT_GRID_GAP,
+  SEAT_CONTAINER_GAP,
+  LEGEND_ITEM_SIZE,
+} from "./constants/app";
 
 // Интерфейсы - потому что TypeScript не доверяет нам
 interface Props {
@@ -82,7 +90,7 @@ const MovieDetailsPage: React.FC<Props> = ({ movie, onBack }) => {
       try {
         setLoadingSessions(true); // Включаем режим ожидания
         const response = await axios.get("http://91.142.94.183:8080/sessions", {
-          params: { page: 0, size: 100, filmId: movie.id }, // 100 сеансов? Оптимист!
+          params: { page: DEFAULT_PAGE_NUMBER, size: SESSIONS_PAGE_SIZE, filmId: movie.id },
         });
         setSessions(response.data.data || []); // Ура, сеансы пришли!
       } catch (err) {
@@ -320,7 +328,7 @@ const MovieDetailsPage: React.FC<Props> = ({ movie, onBack }) => {
                 {hallPlan && (
                   <div
                     className="d-flex flex-column align-items-center mb-4"
-                    style={{ gap: "10px" }} // Отступ между элементами
+                    style={{ gap: SEAT_CONTAINER_GAP }}
                   >
                     {/* Легенда с категориями мест и их цветами */}
                     <div className="d-flex flex-wrap justify-content-center gap-4 mb-3">
@@ -334,8 +342,8 @@ const MovieDetailsPage: React.FC<Props> = ({ movie, onBack }) => {
                           <span
                             className="btn" // Класс кнопки для стилей
                             style={{
-                              width: "20px", // Фиксированная ширина
-                              height: "20px", // Фиксированная высота
+                              width: LEGEND_ITEM_SIZE,
+                              height: LEGEND_ITEM_SIZE,
                               padding: 0, // Убираем отступы
                               // Разный цвет для VIP и обычных категорий
                               backgroundColor:
@@ -360,7 +368,7 @@ const MovieDetailsPage: React.FC<Props> = ({ movie, onBack }) => {
                       <div className="d-flex align-items-center gap-1">
                         <span
                           className="btn btn-outline-light" // Стиль контурной кнопки
-                          style={{ width: "20px", height: "20px", padding: 0 }} // Размеры
+                          style={{ width: LEGEND_ITEM_SIZE, height: LEGEND_ITEM_SIZE, padding: 0 }}
                         ></span>
                         <small>Свободно</small> {/* Текст пояснения */}
                       </div>
@@ -368,7 +376,7 @@ const MovieDetailsPage: React.FC<Props> = ({ movie, onBack }) => {
                       <div className="d-flex align-items-center gap-1">
                         <span
                           className="btn btn-warning" // Стиль предупреждения
-                          style={{ width: "20px", height: "20px", padding: 0 }} // Размеры
+                          style={{ width: LEGEND_ITEM_SIZE, height: LEGEND_ITEM_SIZE, padding: 0 }}
                         ></span>
                         <small>Забронировано</small> {/* Текст пояснения */}
                       </div>
@@ -376,7 +384,7 @@ const MovieDetailsPage: React.FC<Props> = ({ movie, onBack }) => {
                       <div className="d-flex align-items-center gap-1">
                         <span
                           className="btn btn-danger" // Стиль опасности
-                          style={{ width: "20px", height: "20px", padding: 0 }} // Размеры
+                          style={{ width: LEGEND_ITEM_SIZE, height: LEGEND_ITEM_SIZE, padding: 0 }}
                         ></span>
                         <small>Продано</small> {/* Текст пояснения */}
                       </div>
@@ -397,9 +405,8 @@ const MovieDetailsPage: React.FC<Props> = ({ movie, onBack }) => {
                             key={rowNum} // Уникальный ключ по номеру ряда
                             style={{
                               display: "grid", // Используем CSS Grid для расположения
-                              // Динамическое количество колонок по количеству мест в ряду
-                              gridTemplateColumns: `repeat(${rowSeats.length}, 50px)`,
-                              gap: "5px", // Отступ между местами
+                              gridTemplateColumns: `repeat(${rowSeats.length}, ${SEAT_BUTTON_SIZE})`,
+                              gap: SEAT_GRID_GAP,
                             }}
                           >
                             {/* Рендерим каждое место в ряду */}
@@ -421,7 +428,7 @@ const MovieDetailsPage: React.FC<Props> = ({ movie, onBack }) => {
                                 <button
                                   key={seat.id} // Уникальный ключ по ID места
                                   className={`btn ${color}`} // Классы кнопки с определенным цветом
-                                  style={{ width: "50px", height: "50px" }} // Фиксированный размер
+                                  style={{ width: SEAT_BUTTON_SIZE, height: SEAT_BUTTON_SIZE }}
                                   disabled={status !== "AVAILABLE"} // Отключаем если место не доступно
                                   onClick={() => handleSeatClick(seat.id)} // Обработчик клика
                                   // Всплывающая подсказка с информацией о месте
