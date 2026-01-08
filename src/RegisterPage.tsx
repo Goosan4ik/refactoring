@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { registerUser } from "./api/auth";
+import { DEFAULT_USER_AGE } from "./constants/app";
 
 interface Props {
   onRegister: (token: { accessToken: string }) => void;
@@ -12,7 +13,7 @@ export default function RegisterPage({ onRegister }: Props) {
     password: "",
     firstName: "",
     lastName: "",
-    age: 21,
+    age: DEFAULT_USER_AGE,
     gender: "MALE" as "MALE" | "FEMALE",
   });
   const [error, setError] = useState("");
