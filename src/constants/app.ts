@@ -17,6 +17,7 @@ export const SEAT_BUTTON_SIZE = "50px";
 export const MOVIE_CARD_WIDTH = "18rem";
 export const SEAT_GRID_GAP = "5px";
 export const SEAT_CONTAINER_GAP = "10px";
+export const FORM_MAX_WIDTH = "400px";
 
 // UI Color Constants
 export const LEGEND_ITEM_SIZE = "20px";
