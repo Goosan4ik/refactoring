@@ -1,37 +1,20 @@
-import axios from "axios";
+import apiClient from "../utils/apiClient";
 
-
-export interface User {
-  id: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  age: number;
-  roleType: "USER" | "ADMIN";
-  gender: "MALE" | "FEMALE";
-  createdAt: string;
-  updatedAt: string;
+export async function getUserProfile() {
+  const res = await apiClient.get("/users/me");
+  return res.data;
 }
 
-
-export async function getCurrentUser(token: string): Promise<User> {
-  const response = await axios.get("http://91.142.94.183:8080/users/me", {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-  return response.data;
+export async function updateProfile(data: {
+  username?: string;
+  email?: string;
+  password?: string;
+}) {
+  const res = await apiClient.put("/users/me", data);
+  return res.data;
 }
 
-
-export async function updateCurrentUser(
-  token: string,
-  data: Partial<Pick<User, "firstName" | "lastName" | "email" | "age" | "gender">>
-): Promise<User> {
-  const response = await axios.put("http://91.142.94.183:8080/users/me", data, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-  return response.data;
+export async function deleteAccount() {
+  const res = await apiClient.delete("/users/me");
+  return res.data;
 }
