@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import { API_ENDPOINTS } from "./config/api";
 
 interface Review {
   id: string;
@@ -24,7 +25,7 @@ export default function ReviewsDisplay({ movieId }: Props) {
       try {
         setLoading(true);
         const response = await axios.get(
-          `http://91.142.94.183:8080/films/${movieId}/reviews`,
+          API_ENDPOINTS.FILMS.REVIEWS(movieId),
           {
             params: { page: 0, size: 20 },
           }

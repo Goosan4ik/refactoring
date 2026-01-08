@@ -1,3 +1,4 @@
+import { API_ENDPOINTS } from "../config/api";
 import { getCurrentUser } from "./auth";
 
 export interface Film {
@@ -47,7 +48,7 @@ export const MOCK_FILMS: Film[] = [
 
 
 export async function getFilms(): Promise<Film[]> {
-  const res = await fetch("http://91.142.94.183:8080/films");
+  const res = await fetch(API_ENDPOINTS.FILMS.LIST);
   if (!res.ok) throw new Error("Ошибка загрузки фильмов");
   const json: FilmResponse = await res.json();
   return json.data;
@@ -56,7 +57,7 @@ export async function getFilms(): Promise<Film[]> {
 }
 
 export async function getFilmById(id: string): Promise<Film> {
-  const res = await fetch(`http://91.142.94.183:8080/films/${id}`);
+  const res = await fetch(API_ENDPOINTS.FILMS.BY_ID(id));
   if (!res.ok) throw new Error("Фильм не найден");
   return res.json();
 }

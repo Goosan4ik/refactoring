@@ -1,7 +1,6 @@
-
 import axios from "axios";
-
-const API_URL = "http://91.142.94.183:8080/auth";
+import { API_ENDPOINTS } from "../config/api";
+import { storage } from "../utils/storage";
 
 export interface AuthResponse {
   accessToken: string;
@@ -15,10 +14,10 @@ export async function registerUser(data: {
   age: number;
   gender: "MALE" | "FEMALE";
 }): Promise<AuthResponse> {
-  const response = await axios.post(`${API_URL}/register`, data, {
+  const response = await axios.post(API_ENDPOINTS.AUTH.REGISTER, data, {
     headers: { "Content-Type": "application/json" },
   });
-  localStorage.setItem("token", response.data.accessToken);
+  storage.setToken(response.data.accessToken);
   return response.data;
 }
 
@@ -26,18 +25,18 @@ export async function loginUser(data: {
   email: string;
   password: string;
 }): Promise<AuthResponse> {
-  const response = await axios.post(`${API_URL}/login`, data, {
+  const response = await axios.post(API_ENDPOINTS.AUTH.LOGIN, data, {
     headers: { "Content-Type": "application/json" },
   });
-  localStorage.setItem("token", response.data.accessToken);
+  storage.setToken(response.data.accessToken);
   return response.data;
 }
 
 export function logout() {
-  localStorage.removeItem("token");
+  storage.removeToken();
 }
 
 export function getCurrentUser() {
-  const token = localStorage.getItem("token");
+  const token = storage.getToken();
   return token ? { accessToken: token } : null;
 }
